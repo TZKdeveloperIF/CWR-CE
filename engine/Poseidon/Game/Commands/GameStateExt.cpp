@@ -765,6 +765,8 @@ GameValue ObjSetPos(const GameState* state, GameValuePar oper1, GameValuePar ope
 GameValue ObjSetPosASL(const GameState* state, GameValuePar oper1, GameValuePar oper2);
 GameValue ObjSetRepairCargo(const GameState* state, GameValuePar oper1, GameValuePar oper2);
 GameValue ObjSetSelectionDammage(const GameState* state, GameValuePar oper1, GameValuePar oper2);
+GameValue ObjGetCustomState(const GameState *state, GameValuePar oper1, GameValuePar oper2);
+GameValue ObjSetCustomState(const GameState *state, GameValuePar oper1, GameValuePar oper2);
 GameValue ObjSetSkill(const GameState* state, GameValuePar oper1, GameValuePar oper2);
 GameValue ObjSetTexture(const GameState* state, GameValuePar oper1, GameValuePar oper2);
 GameValue ObjSetUnitPos(const GameState* state, GameValuePar oper1, GameValuePar oper2);
@@ -1460,6 +1462,10 @@ static const GameOperator* GetExtBinary(int& count)
         GameOperator(GameNothing, "SetSelectionDammage", function, ObjSetSelectionDammage, GameObject, GameArray),
         GameOperator(GameNothing, "setSelectionDamage", function, ObjSetSelectionDammage, GameObject,
                      GameArray), // one-M alias
+
+        // custom state for scriptors. Each unit can have 32 states
+        GameOperator(GameBool,"getCustomState",function,ObjGetCustomState,GameObject,GameScalar),
+        GameOperator(GameNothing,"setCustomState",function,ObjSetCustomState,GameObject,GameArray),
     };
     count = sizeof(ExtBinary) / sizeof(*ExtBinary);
     return ExtBinary;

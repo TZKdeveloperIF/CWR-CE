@@ -1165,6 +1165,66 @@ GameValue ObjSetSelectionDammage(const GameState* state, GameValuePar oper1, Gam
     return NOTHING;
 }
 
+GameValue ObjGetCustomState(const GameState* state, GameValuePar oper1, GameValuePar oper2)
+{
+    Object* obj = GetObject(oper1);
+    if (!obj)
+    {
+        return NOTHING;
+    }
+    EntityAI* veh = dyn_cast<EntityAI>(obj);
+    if (!veh)
+    {
+        return NOTHING;
+    }
+    AIUnit* unit = veh->CommanderUnit();
+    if (!unit)
+    {
+        return NOTHING;
+    }
+
+    return unit->GetCustomState(toInt((float)oper2));
+}
+
+GameValue ObjSetCustomState(const GameState* state, GameValuePar oper1, GameValuePar oper2)
+{
+    Object* obj = GetObject(oper1);
+    if (!obj)
+    {
+        return NOTHING;
+    }
+    EntityAI* veh = dyn_cast<EntityAI>(obj);
+    if (!veh)
+    {
+        return NOTHING;
+    }
+    AIUnit* unit = veh->CommanderUnit();
+    if (!unit)
+    {
+        return NOTHING;
+    }
+
+    const GameArrayType &array = oper2;
+    if(array.Size() != 2)
+    {
+        state->SetError(EvalDim,array.Size(),2);
+        return NOTHING;
+    }
+    if (array[0].GetType() != GameScalar)
+    {
+        state->TypeError(GameScalar,array[0].GetType());
+        return NOTHING;
+    }
+    if (array[1].GetType() != GameBool)
+    {
+        state->TypeError(GameBool,array[1].GetType());
+        return NOTHING;
+    }
+
+    unit->SetCustomState(toInt((float)array[0]), array[1]);
+    return NOTHING;
+}
+
 GameValue DebugShow(const GameState* state, GameValuePar oper1)
 {
     const GameArrayType& array = oper1;

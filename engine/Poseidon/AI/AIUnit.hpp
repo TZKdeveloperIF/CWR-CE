@@ -209,6 +209,8 @@ protected:
 	Foundation::Time _dammageCriticalTime;
 	Foundation::Time _ammoCriticalTime;
 
+	int32_t _customState; // an extend interger for scripter to store custom state
+
 public:
 	AIUnit( Person *vehicle );
 	~AIUnit() override;
@@ -326,6 +328,9 @@ public:
 
 	int GetAIDisabled() const {return _disabledAI;}
 	void SetAIDisabled(int state) {_disabledAI=state;}
+
+	bool GetCustomState(int bit) const;
+	void SetCustomState(int bit, bool set);
 
 	Mode GetMode() const {return _mode;}
 	void SetMode(Mode mode) {_mode = mode;}
