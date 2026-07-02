@@ -719,6 +719,7 @@ GameValue ObjCmpE(const GameState* state, GameValuePar oper1, GameValuePar oper2
 GameValue ObjCmpNE(const GameState* state, GameValuePar oper1, GameValuePar oper2);
 GameValue ObjDisableAI(const GameState* state, GameValuePar oper1, GameValuePar oper2);
 GameValue ObjDistance(const GameState* state, GameValuePar oper1, GameValuePar oper2);
+GameValue ObjEnableAI(const GameState* state, GameValuePar oper1, GameValuePar oper2);
 GameValue ObjFire(const GameState* state, GameValuePar oper1, GameValuePar oper2);
 GameValue ObjFireEx(const GameState* state, GameValuePar oper1, GameValuePar oper2);
 GameValue ObjGetBuildingPos(const GameState* state, GameValuePar oper1, GameValuePar oper2);
@@ -1307,6 +1308,7 @@ static const GameOperator* GetExtBinary(int& count)
         GameOperator(GameNothing, "lock", function, ObjLock, GameObject, GameBool),
         GameOperator(GameNothing, "stop", function, ObjStop, GameObject, GameBool),
         GameOperator(GameNothing, "disableAI", function, ObjDisableAI, GameObject, GameString),
+        GameOperator(GameNothing, "enableAI", function, ObjEnableAI, GameObject, GameString),
         GameOperator(GameNothing, "assignAsCommander", function, ObjAssignAsCommander, GameObject, GameObject),
         GameOperator(GameNothing, "assignAsDriver", function, ObjAssignAsDriver, GameObject, GameObject),
         GameOperator(GameNothing, "assignAsGunner", function, ObjAssignAsGunner, GameObject, GameObject),

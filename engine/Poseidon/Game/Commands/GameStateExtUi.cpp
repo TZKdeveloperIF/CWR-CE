@@ -2403,6 +2403,37 @@ GameValue ObjDisableAI(const GameState* state, GameValuePar oper1, GameValuePar 
     return NOTHING;
 }
 
+// Simple bitwise operation. Almost same as ObjDisableAI
+GameValue ObjEnableAI( const GameState *state, GameValuePar oper1, GameValuePar oper2 )
+{
+    Object* obj = GetObject(oper1);
+    if (!obj)
+    {
+        return NOTHING;
+    }
+    EntityAI* veh = dyn_cast<EntityAI>(obj);
+    if (!veh)
+    {
+        return NOTHING;
+    }
+    AIUnit* unit = veh->CommanderUnit();
+    if (!unit)
+    {
+        return NOTHING;
+    }
+    // get value identified by string
+    GameStringType str = oper2;
+    const char* ss = str;
+    AIUnit::DisabledAI s = GetEnumValue<AIUnit::DisabledAI>(ss);
+    int dai = unit->GetAIDisabled();
+    if (s == INT_MIN)
+    {
+        s = (AIUnit::DisabledAI)0;
+    }
+    unit->SetAIDisabled(dai & ~s);
+    return NOTHING;
+}
+
 GameValue ObjLand(const GameState* state, GameValuePar oper1, GameValuePar oper2)
 {
     Object* obj = GetObject(oper1);
