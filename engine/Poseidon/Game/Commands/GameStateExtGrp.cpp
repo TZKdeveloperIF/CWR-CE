@@ -1363,6 +1363,69 @@ GameValue VehTarget(const GameState* state, GameValuePar oper1, GameValuePar ope
 
 DEFINE_COMMAND(Target)
 
+namespace
+{
+bool preProcessSpecialAction(EntityAI *veh, UIAction& action)
+{
+    switch (action.type)
+    {
+    // Special process for "LOAD MAGAZINE". This action type is supported in OFP however
+    // in OFP no way to obtain magazine's creator and id info in script.
+    // BTW, In AA3 there're magazinesDetail command to provide creator and id to scripter.
+    case ATLoadMagazine:
+    {
+        EntityAI* object = action.target;
+        if (!object)
+            return false;
+
+        // action.param3 assigned by scripter should be weapon|magazine
+        // for example: "gun120|shell120" for M1A1 to "reload HEAT"
+        const char *separator = strchr(action.param3, '|');
+        if (!separator)
+            return false;
+        int separatorPos = separator - action.param3;
+        RString weaponName = action.param3.Substring(0, separatorPos);
+        RString magName = action.param3.Substring(separatorPos + 1, INT_MAX);
+
+        int iSlot = -1;
+        for (int i = 0; i < object->NMagazineSlots(); i++)
+        {
+            const MagazineSlot &slot = object->GetMagazineSlot(i);
+            if (stricmp(slot._weapon->GetName(), weaponName) == 0)
+            {
+                iSlot = i;
+                break;
+            }
+        }
+        if (iSlot < 0)
+            return false;
+        const MagazineSlot &slot = object->GetMagazineSlot(iSlot);
+
+        for (int i = 0; i < object->NMagazines(); i++)
+        {
+            const Magazine *mag = object->GetMagazine(i);
+            if (stricmp(mag->_type->GetName(), magName) == 0)
+            {
+                int best = object->FindBestMagazine(mag->_type, 0);
+                if (best >= 0)
+                {
+                    const Magazine *bestMag = object->GetMagazine(best);
+                    RString muzzleID = slot._weapon->GetName() + RString("|") + slot._muzzle->GetName();
+                    action.param = bestMag->_creator;
+                    action.param2 = bestMag->_id;
+                    action.param3 = muzzleID;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    default:
+        return true;
+    }
+}
+} // (anonymous)
+
 GameValue VehProcessAction(const GameState* state, GameValuePar oper1, GameValuePar oper2)
 {
     EntityAI* veh = dyn_cast<EntityAI>(GetObject(oper1));
@@ -1400,6 +1463,14 @@ GameValue VehProcessAction(const GameState* state, GameValuePar oper1, GameValue
             if (action.type == INT_MIN)
             {
                 action.type = ATNone;
+            }
+            {
+                bool preproc = preProcessSpecialAction(veh, action);
+                if (!preproc)
+                {
+                    // todo: better prepare custom hint message for scripter
+                    return NOTHING;
+                }
             }
         }
             veh->StartActionProcessing(action, veh->CommanderUnit());
