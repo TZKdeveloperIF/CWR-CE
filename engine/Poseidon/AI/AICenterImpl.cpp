@@ -739,7 +739,7 @@ namespace Poseidon
 
 OLinkArray<EntityAI> vehiclesMap;
 OLinkArray<Vehicle> sensorsMap;
-AutoArray<ArcadeMarkerInfo> markersMap;
+GblMarkerArrayWithHash markersMap;
 AutoArray<SynchronizedItem> synchronized;
 
 void SynchronizedItem::Add(AIGroup* grp)
@@ -843,7 +843,11 @@ LSError AIGlobalSerialize(ParamArchive& ar)
     PARAM_CHECK(ar.SerializeRefs("VehiclesMap", vehiclesMap, 1))
     PARAM_CHECK(ar.SerializeRefs("SensorsMap", sensorsMap, 1))
     PARAM_CHECK(ar.Serialize("Stats", GStats, 1))
-    PARAM_CHECK(ar.Serialize("Markers", markersMap, 1))
+
+    const int oldSize = markersMap.Size();
+    PARAM_CHECK(ar.Serialize("Markers", markersMap.ArrayForSerialize(), 1))
+    markersMap.OnSerialize(oldSize);
+
     return LSOK;
 }
 

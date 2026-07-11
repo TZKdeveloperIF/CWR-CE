@@ -91,7 +91,144 @@ struct SynchronizedItem
 
 extern OLinkArray<EntityAI> vehiclesMap;
 extern OLinkArray<Vehicle> sensorsMap;
-extern AutoArray<ArcadeMarkerInfo> markersMap;
+class GblMarkerArrayWithHash
+{
+private:
+	struct RStrIHasher
+	{
+		unsigned int operator()(const RString& str) const
+		{
+			return CalculateStringHashValueCI(str);
+		}
+	};
+	struct RStrIEqual
+	{
+		bool operator()(const RString& lhs, const RString& rhs) const
+		{
+			return stricmp(lhs.Data(), rhs.Data()) == 0;
+		}
+	};
+	AutoArray<ArcadeMarkerInfo> m_markersArr;
+	std::unordered_map<RString, int, RStrIHasher, RStrIEqual> m_name2IdxMap;
+public:
+	// Transmit to AutoArray
+	int Add(const ArcadeMarkerInfo& src)
+	{
+		const int insertedIdx = m_markersArr.Add(src);
+		// It's acceptable in origin OFP that meets same name markers when reading mission.sqm
+		// thus src.name can exist in m_name2IdxMap on adding new marker
+		m_name2IdxMap.insert(std::make_pair(src.name, insertedIdx)); // can fail
+		return insertedIdx;
+	}
+	int Add() = delete; // not allow Add default object first and then rename it
+	int Size() const
+	{
+		return m_markersArr.Size();
+	}
+	void Clear()
+	{
+		m_markersArr.Clear();
+		m_name2IdxMap.clear();
+	}
+	void Delete(int index)
+	{
+		// Note: Markers are created in three distinct ways. User-created markers (via the map) are shared across the network, carry a "_user_defined" prefix, and possess a unique ID, thus they never duplicate. Script-created markers (via createMarker) are local and have a duplicate-name check. Markers defined in mission.sqm may have duplicate names.
+		// Since duplicates are possible, when deleting a marker by name, the deletion logic must advance its search index to the next marker with the same name if one exists.
+		// For markers with the "_user_defined" prefix, uniqueness can usually be assumed. However, this assumption breaks if script-created or mission.sqm markers also employ that prefix, although such practices are rarely encountered.
+
+		RString deletedMarkerName = m_markersArr[index].name;
+		const char* userDefined = "_user_defined";
+		const bool isUserDefMarker = strnicmp(deletedMarkerName, userDefined, strlen(userDefined)) == 0;
+		const int oldSize = m_markersArr.Size();
+		int newIdx = oldSize;
+
+		m_markersArr.Delete(index);
+
+		if (!isUserDefMarker)
+		{
+			// origin OFP will only delete first marker matches input name
+			// search whether there exists markers using same name and update index value
+			for (int i = index, n = m_markersArr.Size(); i < n; ++i)
+			{
+				if (stricmp(deletedMarkerName, m_markersArr[i].name) == 0)
+				{
+					newIdx = i;
+					break;
+				}
+			}
+		}
+		for (auto it = m_name2IdxMap.begin(); it != m_name2IdxMap.end(); )
+		{
+			if (it->second < index)
+			{
+				++it;
+			}
+			else if (it->second == index)
+			{
+				if (newIdx == oldSize)	// no another marker whose name is deletedMarkerName
+				{
+					it = m_name2IdxMap.erase(it);
+				}
+				else					// still have marker whose name is deletedMarkerName
+				{
+					it->second = newIdx;
+					++it;
+				}
+			}
+			else // it->second > index
+			{
+				--it->second;
+				++it;
+			}
+		}
+	}
+	ArcadeMarkerInfo& operator[](int i)
+	{
+		return m_markersArr[i];
+	}
+	const ArcadeMarkerInfo& operator[](int i) const
+	{
+		return m_markersArr[i];
+	}
+
+	// Search
+	static bool ValidIdx(int index) { return index >= 0; }
+	int FindIdx(const RString& name) const
+	{
+		auto it = m_name2IdxMap.find(name);
+		if (it != m_name2IdxMap.cend())
+			return it->second;
+		return -1;
+	}
+	ArcadeMarkerInfo* Find(const RString& name)
+	{
+		const int idx = FindIdx(name);
+		if (!ValidIdx(idx))
+			return nullptr;
+		return &m_markersArr[idx];
+	}
+	const ArcadeMarkerInfo* Find(const RString& name) const
+	{
+		const int idx = FindIdx(name);
+		if (!ValidIdx(idx))
+			return nullptr;
+		return &m_markersArr[idx];
+	}
+
+	// For serialize
+	AutoArray<ArcadeMarkerInfo>& ArrayForSerialize()
+	{
+		return m_markersArr;
+	}
+	void OnSerialize(const int oldSize)
+	{
+		for (int i = oldSize, c = m_markersArr.Size(); i < c; ++i)
+		{
+			m_name2IdxMap.insert(std::make_pair(m_markersArr[i].name, i)); // can fail
+		}
+	}
+};
+extern GblMarkerArrayWithHash markersMap;
 extern AutoArray<SynchronizedItem> synchronized;
 
 template <class Task, class ContextType>
