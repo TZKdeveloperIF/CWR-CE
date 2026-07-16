@@ -739,7 +739,7 @@ namespace Poseidon
 
 OLinkArray<EntityAI> vehiclesMap;
 OLinkArray<Vehicle> sensorsMap;
-GblMarkerArrayWithHash markersMap;
+GlobalMarkerArrayWithHash markersMap;
 AutoArray<SynchronizedItem> synchronized;
 
 void SynchronizedItem::Add(AIGroup* grp)
